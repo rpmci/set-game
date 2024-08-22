@@ -15,28 +15,31 @@ public class GameScreen implements Screen, InputProcessor {
 
     final SetGame game;
 
-    // Easy adjusting the size and card layout
+    // Easy adjusting the size and card layout // TODO improve resizing
     static final int cardWidth = 97;
     static final int cardHeight = 55;
     static final int gap = 10;
-    static final int vpWidth = (cardWidth * 3 + gap * 4);
-    static final int vpHeight = ((cardHeight + gap ) * 7 + gap);
+    static final int vpWidth = ((cardWidth + gap) * 3 + gap);
+    static final int vpHeight = ((cardHeight + gap) * 8 + gap);
 
     private Texture spriteSheet;
     private Array<Card> cardDeck;
     private Array<Card> revealedCards;
     private Array<Card> selectedCards;
+    private Array<Card> existingSet;
 
     Sprite restartButton;
-    Sprite hintButton;    // TODO implement hint toggleHighlight a card, number of sets available
+    Sprite hintButton;    // TODO maybe show number of sets available
     String hintText;
     Sprite add3Button;
+    Sprite revealButton; // TODO maybe randomize highlighted card
 
 //    Sound dropSound;
 //    Music rainMusic;
     OrthographicCamera camera;
 
     int setsFound;
+    int cardsRemaining;
 
     public GameScreen(final SetGame game) {
         this.game = game;
@@ -51,18 +54,20 @@ public class GameScreen implements Screen, InputProcessor {
         camera.setToOrtho(false, vpWidth, vpHeight);
 
         initDeck();
-        selectedCards = new Array<Card>();
 
         // Button creator
         restartButton = new Sprite(new Texture("restart-button.png"));
         restartButton.setBounds(gap, gap, 61, 25);
         hintButton = new Sprite(new Texture("hint-button.png"));
         hintButton.setBounds(gap + (gap + 61), gap, 61, 25);
-        hintText = "";
         add3Button = new Sprite(new Texture("add3-button.png"));
         add3Button.setBounds(gap + 2*(gap+61), gap, 61, 25);
+        revealButton = new Sprite(new Texture("reveal-button.png"));
+        revealButton.setBounds(gap + 3*(gap+61), gap, 61, 25);
 
-        Gdx.input.setInputProcessor(this); // removed to try to implement buttons
+        hintText = "";
+
+        Gdx.input.setInputProcessor(this);
     }
 
     @Override
@@ -82,8 +87,12 @@ public class GameScreen implements Screen, InputProcessor {
         restartButton.draw(game.batch);
         hintButton.draw(game.batch);
         add3Button.draw(game.batch);
-        game.font.draw(game.batch, "Sets found: " + setsFound, 3*(gap+61) + gap, 2 * gap);
-        game.font.draw(game.batch, hintText, 3*(gap+61) + gap, (2 * gap) + 15);
+        revealButton.draw(game.batch);
+//        game.font.draw(game.batch, "Sets found: " + setsFound, 3*(gap+61) + gap, 2 * gap);
+//        game.font.draw(game.batch, "Deck: " + cardsRemaining + " cards", 3*(gap+61) + gap, 2 * gap); // draw far right
+//        game.font.draw(game.batch, hintText, 3*(gap+61) + gap, (2 * gap) + 15); // draw far right
+        game.font.draw(game.batch, "Cards Remaining: " + cardsRemaining, gap, cardHeight);
+        game.font.draw(game.batch, hintText, 3*(gap+61) + gap, cardHeight);
         game.batch.end();
 
 
@@ -93,18 +102,20 @@ public class GameScreen implements Screen, InputProcessor {
         // // TimeUtils
         // // game.font.draw(game.batch, "Sets Collected: " + setsFound, 0, 480);
         // TODO check how many sets exist
-        // TODO Show number of remaining cards
     }
 
     public void initDeck() {
         if (spriteSheet == null) {
             spriteSheet = new Texture("card-sheet.png");
+            selectedCards = new Array<Card>();
             cardDeck = new Array<Card>(81);
             revealedCards = new Array<Card>(12);
+            existingSet = new Array<Card>();
         } else {
             selectedCards.clear();
             cardDeck.clear();
             revealedCards.clear();
+            existingSet.clear();
         }
 
         int row = 0;
@@ -137,6 +148,15 @@ public class GameScreen implements Screen, InputProcessor {
                 revealedCards.add(card);
             }
         }
+
+        cardsRemainingUpdate();
+    }
+
+    public void clearSelectedCards() {
+        for (Card c : selectedCards) {
+            c.toggleHighlight();
+        }
+        selectedCards.clear();
     }
 
     public void addThree() {
@@ -149,6 +169,7 @@ public class GameScreen implements Screen, InputProcessor {
                 card.setPosition(row * (cardWidth + gap) + gap, vpHeight - (col * (cardHeight + gap)));
                 revealedCards.add(card);
             }
+            cardsRemainingUpdate();
         }
         hintText = "Added 3 cards"; //TODO different text if deck is empty
     }
@@ -184,13 +205,11 @@ public class GameScreen implements Screen, InputProcessor {
             }
             System.out.println("Set found!"); // debugging
             setsFound += 1;
-        } else {
-            for (Card c : selectedCards) {
-                c.toggleHighlight();
-            }
+            cardsRemainingUpdate();
         }
 
-        selectedCards.clear();
+        clearSelectedCards();
+        existingSet.clear();
         System.out.println("Cards: cleared"); // debugging
         hintText = "";
     }
@@ -202,6 +221,7 @@ public class GameScreen implements Screen, InputProcessor {
             for (int second = first + 1; second < (n-1); second++) {
                 for (int third = second + 1; third < n; third++) {
                     if (Card.isSet(revealedCards.get(first), revealedCards.get(second), revealedCards.get(third))) {
+                        existingSet.add(revealedCards.get(first), revealedCards.get(second), revealedCards.get(third));
                         return true;
                     }
                 }
@@ -218,6 +238,10 @@ public class GameScreen implements Screen, InputProcessor {
             hintText = "There is a set";
             System.out.println("There is a set"); // debugging
         }
+    }
+
+    public void cardsRemainingUpdate() {
+        cardsRemaining = cardDeck.size;
     }
 
     @Override
@@ -296,12 +320,24 @@ public class GameScreen implements Screen, InputProcessor {
             return true;
         } else if (add3Button.getBoundingRectangle().contains(touchPos.x, touchPos.y)) {
             System.out.println("Add3"); // debugging
-//            addThree(); // Allowing add 3 even when a set exists
             if (findExistingSet()) {
                 hintTextUpdate(true);
             } else {
                 addThree();
             }
+            return true;
+        } else if (revealButton.getBoundingRectangle().contains(touchPos.x, touchPos.y)) {
+            System.out.println("Reveal"); // debugging
+            boolean setExists = findExistingSet();
+            if (setExists) {
+                clearSelectedCards();
+                Card card = existingSet.first();
+                selectedCards.add(card);
+                card.toggleHighlight();
+            }
+            hintTextUpdate(setExists);
+
+            // todo add a blinking animation
             return true;
         }
         return false;
@@ -328,7 +364,7 @@ public class GameScreen implements Screen, InputProcessor {
         camera.unproject(mousePos);
 
         for (Card card : revealedCards) {
-            card.borderHighlight(card.getBounds().contains(mousePos.x, mousePos.y));
+            card.hoverHighlight(card.getBounds().contains(mousePos.x, mousePos.y));
         }
         return true;
     }

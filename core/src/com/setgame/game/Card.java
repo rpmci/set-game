@@ -67,7 +67,7 @@ public class Card {
         showHighlight();
     }
 
-    public void borderHighlight(boolean highlight) {
+    public void hoverHighlight(boolean highlight) {
         if (highlight) {
             cardSprite.setColor(Color.SKY);
         } else {
