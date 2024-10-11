@@ -10,7 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class GameScreen implements Screen, InputProcessor {
@@ -55,7 +55,7 @@ public class GameScreen implements Screen, InputProcessor {
         // create the camera and the SpriteBatch
         camera = new OrthographicCamera();
         camera.setToOrtho(false, vpWidth, vpHeight);
-        viewport = new FitViewport(vpWidth, vpHeight, camera);
+        viewport = new ScreenViewport(camera);
 
         initDeck();
 
