@@ -4,17 +4,21 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class MainMenuScreen implements Screen {
 
     final SetGame game;
     OrthographicCamera camera;
+    Viewport viewport;
 
     public MainMenuScreen(final SetGame gam) {
         game = gam;
 
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, 331, 400);
+        camera.setToOrtho(false, 331, 530);
+        viewport = new FitViewport(331, 530, camera);
     }
 
     @Override
@@ -37,6 +41,7 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+        viewport.update(width, height);
     }
 
     @Override

@@ -10,6 +10,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class GameScreen implements Screen, InputProcessor {
 
@@ -37,6 +39,7 @@ public class GameScreen implements Screen, InputProcessor {
 //    Sound dropSound;
 //    Music rainMusic;
     OrthographicCamera camera;
+    Viewport viewport;
 
     int setsFound;
     int cardsRemaining;
@@ -52,6 +55,7 @@ public class GameScreen implements Screen, InputProcessor {
         // create the camera and the SpriteBatch
         camera = new OrthographicCamera();
         camera.setToOrtho(false, vpWidth, vpHeight);
+        viewport = new FitViewport(vpWidth, vpHeight, camera);
 
         initDeck();
 
@@ -64,8 +68,6 @@ public class GameScreen implements Screen, InputProcessor {
         add3Button.setBounds(gap + 2*(gap+61), gap, 61, 25);
         revealButton = new Sprite(new Texture("reveal-button.png"));
         revealButton.setBounds(gap + 3*(gap+61), gap, 61, 25);
-
-        hintText = "";
 
         Gdx.input.setInputProcessor(this);
     }
@@ -150,6 +152,7 @@ public class GameScreen implements Screen, InputProcessor {
         }
 
         cardsRemainingUpdate();
+        hintText = "";
     }
 
     public void clearSelectedCards() {
@@ -246,6 +249,7 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public void resize(int width, int height) {
+        viewport.update(width, height);
     }
 
     @Override
